@@ -1,9 +1,12 @@
+// use lightbot::json_to_hashmap;
 use lightbot::bot::Bot;
+use std::fs::read_to_string;
 use anyhow::Context as _;
+use serde_json::Value;
 use serenity::prelude::*;
 use shuttle_runtime::SecretStore;
 use symspell::{AsciiStringStrategy, SymSpell};
-use tracing::{error, info};
+use tracing::info;
 
 #[shuttle_runtime::main]
 async fn serenity(
@@ -25,9 +28,18 @@ async fn serenity(
   symspell.load_bigram_dictionary("data/frequency_bigramdictionary_en_243_342.txt", 0, 2, " ");
   info!("loaded bigram dictionary!");
 
+  info!("loading tags...");
+  let tags_json = read_to_string("data/tags.json").expect("could not read tags.json");
+  let tags: Value = serde_json::from_str(&tags_json).expect("could not parse tags.json");
+  // info!("tags: {:#?}", tags);
+  info!("loaded tags!");
+
   let bot = Bot {
     symspell,
+    tags,
   };
+
+  info!("starting...");
 
   let client = Client::builder(&token, intents)
     .event_handler(bot)
